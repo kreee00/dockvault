@@ -117,13 +117,15 @@ sudo chmod +x /opt/dockvault/backup.sh
 
 ```bash
 docker run --rm \
-  -v n8n_n8n_data:/n8n_data \
-  -v db-backup_db_data:/postgres_data \
+  -v server-monitoring_grafana_data:/server-monitoring-grafana-1 \
+  -v server-monitoring_prometheus_data:/server-monitoring-prometheus-1 \
+  -v traefik-certs:/traefik \
+  -v n8n_n8n_data:/n8n-n8n-1 \
+  -v n8n_postgres_data:/n8n-n8n_postgres-1 \
   -v /opt/dockvault/backup.sh:/backup/backup.sh \
-  -v /opt/dockvault/n8n:/backup/n8n \
-  -v /opt/dockvault/postgres:/backup/postgres \
-  -v /home/<USER>/.config/rclone:/root/.config/rclone \
-  -v /home/<USER>/.config/rclone:/home/ubuntu/.config/rclone \
+  -v /opt/dockvault:/backup \
+  -v /home/ersdb/.config/rclone:/root/.config/rclone \
+  -v /home/ersdb/.config/rclone:/home/ersdb/.config/rclone \
   alpine:latest /bin/sh -c "apk add --no-cache tar rclone && /bin/sh /backup/backup.sh"
 ```
 
