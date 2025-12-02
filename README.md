@@ -1,9 +1,3 @@
-Here is a professional, high-quality `README.md` file for your GitHub repository. It is structured to look impressive to supervisors and recruiters, highlighting both the technical implementation and the business value (Disaster Recovery).
-
-I have included a **Mermaid.js** diagram (which GitHub supports natively) to visualize the architecture.
-
------
-
 # DockVault 🐳 🔒
 
 **DockVault** is a robust, modular Command Line Interface (CLI) tool designed to automate the backup of Docker Volumes to Google Drive. It implements **Infrastructure as Code (IaC)** principles to turn fragile, manual backup processes into resilient, automated workflows.
@@ -227,6 +221,4 @@ This project is licensed under the MIT License - see the [LICENSE](https://www.g
 
 -----
 
-\<p align="center"\>
-Made with ❤️ by \<a href="[https://github.com/kreee00](https://github.com/kreee00)"\>Akram Faisal\</a\> for the Student Industrial Internship Project 2025 at ERS Energy.
-\</p\>
+Made with ❤️ by [Akram Faisal](https://github.com/kreee00) for the Student Industrial Internship Project 2025 at ERS Energy.
