@@ -99,7 +99,7 @@ Since this project uses the **Bashly** framework, you can compile the latest ver
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/yourusername/dockvault.git
+    git clone https://github.com/kreee00/dockvault.git
     cd dockvault
     ```
 
