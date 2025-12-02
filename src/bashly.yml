@@ -1,0 +1,69 @@
+name: dockvault
+help: Automated Docker Volume Backup & Restore Tool
+version: 3.8.0
+
+environment_variables:
+  - name: DOCKVAULT_HOME
+    help: "Base directory for scripts (default: $HOME/dockvault_scripts)"
+    default: "$HOME/dockvault_scripts"
+  - name: DOCKVAULT_RCLONE_REMOTE
+    help: "Name of the Rclone remote (default: dockvault_backup)"
+    default: dockvault_backup
+
+commands:
+  - name: scan
+    help: List all Docker volumes on this host
+
+  - name: list
+    help: Show the managed backup scripts hierarchy
+
+  - name: tree
+    help: Visualize Google Drive folder structure
+    args:
+      - name: path
+        help: Optional subfolder path to list
+        required: false
+    flags:
+      - long: --detailed
+        short: -d
+        help: Show detailed view with latest backup timestamps
+
+  - name: generate
+    help: Wizard to create dedicated backup/restore scripts for a volume
+    flags:
+      - long: --dry-run
+        help: Preview the generation without writing files
+
+  - name: backup
+    help: Trigger immediate backup for specific volumes or run all
+    flags:
+      - long: --dry-run
+        help: Simulate the backup execution
+
+  - name: restore
+    help: Restore navigator to find and execute volume restoration scripts
+
+  - name: schedule
+    alias: cron
+    help: Manage the automatic scheduler (Systemd Timer)
+    flags:
+      - long: --install
+        short: -i
+        help: Install and enable the Systemd timer (Runs daily)
+      - long: --check
+        short: -c
+        help: Check the status of the Systemd timer
+      - long: --logs
+        short: -l
+        help: View Systemd execution logs
+    footer: |
+      WSL / WINDOWS USERS:
+      --------------------
+      Systemd and Cron often do not run reliably in the background on WSL.
+
+      Recommended Method:
+      1. Open 'Task Scheduler' in Windows.
+      2. Create a Basic Task (Daily).
+      3. Action: "Start a Program"
+      4. Program: wsl.exe
+      5. Arguments: -u <YOUR_USER> bash /home/<YOUR_USER>/dockvault_scripts/master_backup.sh
