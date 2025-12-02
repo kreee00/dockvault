@@ -1,37 +1,69 @@
 name: dockvault
-help: CLI to manage remote vault
-version: 0.1.0
+help: Automated Docker Volume Backup & Restore Tool
+version: 3.8.0
+
+environment_variables:
+  - name: DOCKVAULT_HOME
+    help: "Base directory for scripts (default: $HOME/dockvault_scripts)"
+    default: "$HOME/dockvault_scripts"
+  - name: DOCKVAULT_RCLONE_REMOTE
+    help: "Name of the Rclone remote (default: dockvault_backup)"
+    default: dockvault_backup
 
 commands:
-  # Command 1: List Files (Flat View)
+  - name: scan
+    help: List all Docker volumes on this host
+
   - name: list
-    alias: ls
-    help: List files in the shared drive
+    help: Show the managed backup scripts hierarchy
+
+  - name: tree
+    help: Visualize Google Drive folder structure
     args:
       - name: path
+        help: Optional subfolder path to list
         required: false
-        help: The specific folder path
     flags:
-      - long: --remote
-        short: -r
-        arg: name
-        default: dockvault-scadadb
-        help: The rclone remote name
+      - long: --detailed
+        short: -d
+        help: Show detailed view with latest backup timestamps
 
-  # Command 2: List Folders (Tree View)
-  - name: folders
-    alias: tree
-    help: Show hierarchy visual of folders only
-    args:
-      - name: path
-        required: false
-        help: Root path to start the tree view
+  - name: generate
+    help: Wizard to create dedicated backup/restore scripts for a volume
     flags:
-      - long: --remote
-        short: -r
-        arg: name
-        default: dockvault-scadadb
-        help: The rclone remote name
+      - long: --dry-run
+        help: Preview the generation without writing files
 
-  - name: version
-    help: Show version information
+  - name: backup
+    help: Trigger immediate backup for specific volumes or run all
+    flags:
+      - long: --dry-run
+        help: Simulate the backup execution
+
+  - name: restore
+    help: Restore navigator to find and execute volume restoration scripts
+
+  - name: schedule
+    alias: cron
+    help: Manage the automatic scheduler (Systemd Timer)
+    flags:
+      - long: --install
+        short: -i
+        help: Install and enable the Systemd timer (Runs daily)
+      - long: --check
+        short: -c
+        help: Check the status of the Systemd timer
+      - long: --logs
+        short: -l
+        help: View Systemd execution logs
+    footer: |
+      WSL / WINDOWS USERS:
+      --------------------
+      Systemd and Cron often do not run reliably in the background on WSL.
+
+      Recommended Method:
+      1. Open 'Task Scheduler' in Windows.
+      2. Create a Basic Task (Daily).
+      3. Action: "Start a Program"
+      4. Program: wsl.exe
+      5. Arguments: -u <YOUR_USER> bash /home/<YOUR_USER>/dockvault_scripts/master_backup.sh
