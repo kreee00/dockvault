@@ -55,10 +55,10 @@ Existing open-source backup scripts were often:
 graph TD
     User[DevOps Engineer] -->|Commands| CLI[DockVault CLI]
     CLI -->|Scans| Docker[Docker Daemon]
-    CLI -->|Generates| Scripts[Bash Scripts\n(backup.sh / restore.sh)]
+    CLI -->|Generates| Scripts["Bash Scripts <br/> (backup.sh / restore.sh)"]
     
     subgraph "Execution Flow"
-        Scripts -->|1. Dump/Compress| Local[/Temp Dir/]
+        Scripts -->|1. Dump/Compress| Local[Temp Directory]
         Local -->|2. Encrypt & Upload| Rclone[Rclone]
     end
     
