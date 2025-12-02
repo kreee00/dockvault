@@ -82,10 +82,10 @@ Before installing DockVault, ensure your system has the following dependencies:
 
 ### Important: Configure Rclone
 
-DockVault expects an Rclone remote named `gdrive` (default).
+DockVault expects an Rclone remote named `dockvault_backup` (default).
 
 1.  Run `rclone config`
-2.  Create a new remote named `gdrive`
+2.  Create a new remote named `dockvault_backup`
 3.  Select `drive` (Google Drive) and follow the authentication steps.
 
 -----
