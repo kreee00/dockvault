@@ -33,18 +33,29 @@ if [[ "$template_type" != "standard" ]]; then
   read -p "Enter Database Name: " db_name
 fi
 
+# DETERMINE JOB ID / FOLDER NAME
+# If a database name is provided, append it to the volume name
+# This allows multiple backups for the same volume but different DBs
+job_name="$selected_vol"
+if [[ -n "$db_name" ]]; then
+    # Sanitize db_name to be file-system friendly
+    safe_db_name=$(echo "$db_name" | tr -dc '[:alnum:]\-\_')
+    job_name="${selected_vol}-${safe_db_name}"
+fi
+
 echo ""
 read -p "Enter Google Drive Upload Path (e.g. backups/production): " gdrive_path
 remote="${DOCKVAULT_RCLONE_REMOTE}"
 
 # 2. Paths
-vol_dir="${DOCKVAULT_HOME}/${selected_vol}"
+vol_dir="${DOCKVAULT_HOME}/${job_name}"
 backup_script="${vol_dir}/backup.sh"
 restore_script="${vol_dir}/restore.sh"
 
 if [[ -d "$vol_dir" ]] && { [[ -f "$backup_script" ]] || [[ -f "$restore_script" ]]; }; then
   echo ""
-  echo "${red}WARNING: Scripts for volume '$selected_vol' already exist!${reset}"
+  echo "${red}WARNING: Scripts for job '$job_name' already exist!${reset}"
+  echo "Location: $vol_dir"
   read -p "${yellow}Do you want to OVERWRITE them? (y/N): ${reset}" choice
   case "$choice" in 
     y|Y ) echo "Overwriting...";;
@@ -60,20 +71,23 @@ fi
 # GENERATE CONTENT
 # ======================================================
 
-# Start with Header
-b_content=$(tpl_header "$selected_vol" "$template_type")
+# Start with Header (Uses job_name for temp dir uniqueness)
+b_content=$(tpl_header "$job_name" "$template_type")
 
 # Append Specific Logic based on type
 if [[ "$template_type" == "standard" ]]; then
+    # Standard: Use selected_vol for mounting
     b_content+=$(gen_backup_logic_standard "$selected_vol")
     r_logic=$(gen_restore_logic_standard "$selected_vol")
     
 elif [[ "$template_type" == "postgres" ]]; then
-    b_content+=$(gen_backup_logic_postgres "$selected_vol" "$db_container" "$db_user" "$db_name")
+    # Postgres: Use job_name for Archive Name prefix
+    b_content+=$(gen_backup_logic_postgres "$job_name" "$db_container" "$db_user" "$db_name")
     r_logic=$(gen_restore_logic_postgres "$db_container" "$db_user" "$db_name")
     
 elif [[ "$template_type" == "mysql" ]]; then
-    b_content+=$(gen_backup_logic_mysql "$selected_vol" "$db_container" "$db_user" "$db_name")
+    # MySQL: Use job_name for Archive Name prefix
+    b_content+=$(gen_backup_logic_mysql "$job_name" "$db_container" "$db_user" "$db_name")
     r_logic=$(gen_restore_logic_mysql "$db_container" "$db_user" "$db_name")
 fi
 
@@ -84,8 +98,8 @@ b_content+=$(tpl_backup_footer "$remote" "$gdrive_path")
 # HARDCODED POLICY: 30 days, min 30 files
 b_content+=$(tpl_retention_logic "$remote" "$gdrive_path" "30d" "30")
 
-# Generate Full Restore Script
-r_content=$(tpl_restore_script "$selected_vol" "$remote" "$gdrive_path" "$r_logic")
+# Generate Full Restore Script (Uses job_name for wizard title)
+r_content=$(tpl_restore_script "$job_name" "$remote" "$gdrive_path" "$r_logic")
 
 # ======================================================
 # WRITE OR PREVIEW
