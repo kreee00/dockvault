@@ -2,7 +2,7 @@ check_dependencies
 
 SERVICE_NAME="dockvault-backup"
 SYSTEMD_DIR="$HOME/.config/systemd/user"
-MASTER_SCRIPT="$DOCKVAULT_HOME/master_backup.sh"
+MASTER_SCRIPT="$HOME/dockvault_scripts/master_backup.sh"
 
 echo "${green}== Systemd Scheduler Manager ==${reset}"
 
@@ -104,8 +104,8 @@ After=network-online.target docker.service
 [Service]
 Type=oneshot
 ExecStart=/bin/bash $MASTER_SCRIPT
-StandardOutput=append:$DOCKVAULT_HOME/logs/systemd_stdout.log
-StandardError=append:$DOCKVAULT_HOME/logs/systemd_stderr.log
+StandardOutput=append:$HOME/dockvault_scripts/logs/systemd_stdout.log
+StandardError=append:$HOME/dockvault_scripts/logs/systemd_stderr.log
 
 [Install]
 WantedBy=default.target
@@ -174,7 +174,8 @@ install_system_wide() {
   fi
   
   SYSTEMD_SYSTEM_DIR="/etc/systemd/system"
-  MASTER_SCRIPT="$DOCKVAULT_HOME/master_backup.sh"
+  MASTER_SCRIPT="$HOME
+/dockvault_scripts/master_backup.sh"
   
   # Verify master script exists
   if [ ! -f "$MASTER_SCRIPT" ]; then
@@ -196,8 +197,8 @@ After=network-online.target docker.service
 [Service]
 Type=oneshot
 ExecStart=/bin/bash $MASTER_SCRIPT
-StandardOutput=append:$DOCKVAULT_HOME/logs/systemd_stdout.log
-StandardError=append:$DOCKVAULT_HOME/logs/systemd_stderr.log
+StandardOutput=append:$HOME/dockvault_scripts/logs/systemd_stdout.log
+StandardError=append:$HOME/dockvault_scripts/logs/systemd_stderr.log
 
 [Install]
 WantedBy=multi-user.target
