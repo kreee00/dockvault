@@ -103,21 +103,14 @@ Since this project uses the **Bashly** framework, you can compile the latest ver
     cd dockvault
     ```
 
-2.  **Install Bashly (Ruby required):**
+2.  **Install:**
 
     ```bash
-    gem install bashly
-    ```
-
-3.  **Generate and Install:**
-
-    ```bash
-    bashly generate
     chmod +x dockvault
-    sudo mv dockvault /usr/local/bin/dockvault
+    sudo cp dockvault /usr/local/bin/dockvault
     ```
 
-4.  **Verify:**
+3.  **Verify:**
 
     ```bash
     dockvault --help
