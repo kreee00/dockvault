@@ -1,3 +1,6 @@
 [submodule "archive"]
 	path = archive
 	url = https://github.com/kreee00/dockvault-archive
+[submodule "dockvault-archive"]
+	path = dockvault-archive
+	url = https://github.com/kreee00/dockvault-archive
