@@ -539,67 +539,76 @@ EOF
 }
 
 # src/lib/tpl_mysql.sh
-# $1 = volume_name, $2 = container, $3 = user, $4 = db_name
+# $1 = volume_name, $2 = container, $3 = user, $4 = db_name, $5 = password
 gen_backup_logic_mysql() {
     local vol="$1"
     local cont="$2"
     local user="$3"
     local db="$4"
+    local pass="$5"
 
     cat <<EOF
 
 ARCHIVE_NAME="${vol}_mysqldump_\${TIMESTAMP}.sql.gz"
 echo "\${yellow}Dumping MySQL Database...\${reset}"
 
-docker exec $cont mysqldump -u $user -p\${MYSQL_PWD} $db | gzip > "\$TEMP_DIR/\$ARCHIVE_NAME"
+# We pass MYSQL_PWD env var to the container so mysqldump can authenticate
+docker exec -e MYSQL_PWD='$pass' $cont mysqldump -u $user $db | gzip > "\$TEMP_DIR/\$ARCHIVE_NAME"
 EOF
 }
 
-# $1 = container, $2 = user, $3 = db_name
+# $1 = container, $2 = user, $3 = db_name, $4 = password
 gen_restore_logic_mysql() {
     local cont="$1"
     local user="$2"
     local db="$3"
+    local pass="$4"
 
     cat <<EOF
 echo "\${yellow}[INFO] Streaming SQL dump to MySQL...\${reset}"
+
+# Using env var for password to avoid interactive prompt
 if [[ "\$FILENAME" == *.gz ]]; then
-  zcat "\$LOCAL_FILE" | docker exec -i $cont mysql -u $user $db
+  zcat "\$LOCAL_FILE" | docker exec -i -e MYSQL_PWD='$pass' $cont mysql -u $user $db
 else
-  cat "\$LOCAL_FILE" | docker exec -i $cont mysql -u $user $db
+  cat "\$LOCAL_FILE" | docker exec -i -e MYSQL_PWD='$pass' $cont mysql -u $user $db
 fi
 EOF
 }
 
 # src/lib/tpl_postgres.sh
-# $1 = volume_name, $2 = container, $3 = user, $4 = db_name
+# $1 = volume_name, $2 = container, $3 = user, $4 = db_name, $5 = password
 gen_backup_logic_postgres() {
     local vol="$1"
     local cont="$2"
     local user="$3"
     local db="$4"
+    local pass="$5"
 
     cat <<EOF
 
 ARCHIVE_NAME="${vol}_pgdump_\${TIMESTAMP}.sql.gz"
 echo "\${yellow}Dumping PostgreSQL Database...\${reset}"
 
-docker exec -t $cont pg_dump -U $user $db | gzip > "\$TEMP_DIR/\$ARCHIVE_NAME"
+# We pass PGPASSWORD env var to the container so pg_dump authenticates automatically
+docker exec -e PGPASSWORD='$pass' -t $cont pg_dump -U $user $db | gzip > "\$TEMP_DIR/\$ARCHIVE_NAME"
 EOF
 }
 
-# $1 = container, $2 = user, $3 = db_name
+# $1 = container, $2 = user, $3 = db_name, $4 = password
 gen_restore_logic_postgres() {
     local cont="$1"
     local user="$2"
     local db="$3"
+    local pass="$4"
 
     cat <<EOF
 echo "\${yellow}[INFO] Streaming SQL dump to PostgreSQL...\${reset}"
+
 if [[ "\$FILENAME" == *.gz ]]; then
-  zcat "\$LOCAL_FILE" | docker exec -i $cont psql -U $user -d $db
+  zcat "\$LOCAL_FILE" | docker exec -i -e PGPASSWORD='$pass' $cont psql -U $user -d $db
 else
-  cat "\$LOCAL_FILE" | docker exec -i $cont psql -U $user -d $db
+  cat "\$LOCAL_FILE" | docker exec -i -e PGPASSWORD='$pass' $cont psql -U $user -d $db
 fi
 EOF
 }
@@ -1101,23 +1110,26 @@ dockvault_generate_command() {
 
   # DB Inputs
   db_user=""
+  db_pass=""
   db_name=""
   db_container=""
+
   if [[ "$template_type" != "standard" ]]; then
     echo ""
     echo "${blue}Database Configuration:${reset}"
     echo "Select the running container:"
     db_container=$(select_container)
+
     read -p "Enter Database User: " db_user
+    # -s hides the input for security
+    read -s -p "Enter Database Password: " db_pass
+    echo "" # Newline after silent input
     read -p "Enter Database Name: " db_name
   fi
 
   # DETERMINE JOB ID / FOLDER NAME
-  # If a database name is provided, append it to the volume name
-  # This allows multiple backups for the same volume but different DBs
   job_name="$selected_vol"
   if [[ -n "$db_name" ]]; then
-      # Sanitize db_name to be file-system friendly
       safe_db_name=$(echo "$db_name" | tr -dc '[:alnum:]\-\_')
       job_name="${selected_vol}-${safe_db_name}"
   fi
@@ -1134,7 +1146,6 @@ dockvault_generate_command() {
   if [[ -d "$vol_dir" ]] && { [[ -f "$backup_script" ]] || [[ -f "$restore_script" ]]; }; then
     echo ""
     echo "${red}WARNING: Scripts for job '$job_name' already exist!${reset}"
-    echo "Location: $vol_dir"
     read -p "${yellow}Do you want to OVERWRITE them? (y/N): ${reset}" choice
     case "$choice" in
 
@@ -1151,34 +1162,32 @@ dockvault_generate_command() {
   # GENERATE CONTENT
   # ======================================================
 
-  # Start with Header (Uses job_name for temp dir uniqueness)
+  # Start with Header
   b_content=$(tpl_header "$job_name" "$template_type")
 
   # Append Specific Logic based on type
   if [[ "$template_type" == "standard" ]]; then
-      # Standard: Use selected_vol for mounting
       b_content+=$(gen_backup_logic_standard "$selected_vol")
       r_logic=$(gen_restore_logic_standard "$selected_vol")
 
   elif [[ "$template_type" == "postgres" ]]; then
-      # Postgres: Use job_name for Archive Name prefix
-      b_content+=$(gen_backup_logic_postgres "$job_name" "$db_container" "$db_user" "$db_name")
-      r_logic=$(gen_restore_logic_postgres "$db_container" "$db_user" "$db_name")
+      # Pass db_pass to the function
+      b_content+=$(gen_backup_logic_postgres "$job_name" "$db_container" "$db_user" "$db_name" "$db_pass")
+      r_logic=$(gen_restore_logic_postgres "$db_container" "$db_user" "$db_name" "$db_pass")
 
   elif [[ "$template_type" == "mysql" ]]; then
-      # MySQL: Use job_name for Archive Name prefix
-      b_content+=$(gen_backup_logic_mysql "$job_name" "$db_container" "$db_user" "$db_name")
-      r_logic=$(gen_restore_logic_mysql "$db_container" "$db_user" "$db_name")
+      # Pass db_pass to the function
+      b_content+=$(gen_backup_logic_mysql "$job_name" "$db_container" "$db_user" "$db_name" "$db_pass")
+      r_logic=$(gen_restore_logic_mysql "$db_container" "$db_user" "$db_name" "$db_pass")
   fi
 
   # Append Footer
   b_content+=$(tpl_backup_footer "$remote" "$gdrive_path")
 
   # Append Retention Policy
-  # HARDCODED POLICY: 30 days, min 30 files
   b_content+=$(tpl_retention_logic "$remote" "$gdrive_path" "30d" "30")
 
-  # Generate Full Restore Script (Uses job_name for wizard title)
+  # Generate Full Restore Script
   r_content=$(tpl_restore_script "$job_name" "$remote" "$gdrive_path" "$r_logic")
 
   # ======================================================
