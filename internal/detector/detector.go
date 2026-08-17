@@ -213,6 +213,21 @@ func (d *detectorImpl) ScanVolumes(ctx context.Context) ([]VolumeInfo, error) {
 		}
 
 		jobName := d.GenerateJobName(v.Name, serviceType, creds)
+		// ServiceGeneric has no service-specific naming signal, so
+		// GenerateJobName always falls back to the plain "generic_backup" -
+		// fine for one generic container, but every additional one collides
+		// on that same name and silently overwrites the first one's local
+		// job dir and Drive folder (both are keyed by job name). Break the
+		// tie using the container name, which - unlike the volume name - is
+		// guaranteed unique per host.
+		if serviceType == ServiceGeneric && len(containerNames) > 0 {
+			cname := sanitizeComponent(containerNames[0])
+			if suffix := volumeSuffix(v.Name, cname); suffix != "" {
+				jobName = sanitizeComponent(cname + "_" + suffix)
+			} else {
+				jobName = cname
+			}
+		}
 		out = append(out, VolumeInfo{
 			Name:                  v.Name,
 			Containers:            containerNames,
