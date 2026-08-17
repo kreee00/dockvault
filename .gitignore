@@ -1,0 +1,27 @@
+# Build artifacts
+bin/
+*.o
+*.a
+*.so
+*.dylib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test/temp
+postgres_verify/
+.claude/
+*.json.test
+
+# Credentials (never commit these)
+*.json
+!go.mod
+!go.sum
