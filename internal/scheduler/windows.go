@@ -15,7 +15,7 @@ func NativeWindowsScheduledTaskInstructions(dockvaultExePath, dockvaultHome, at 
 	}
 	return fmt.Sprintf(`# Run in PowerShell (as Administrator):
 $action = New-ScheduledTaskAction -Execute "%s" `+"`"+`
-  -Argument "backup --all --home `+"`"+`"%s`+"`"+`"" `+"`"+`
+  -Argument "--home `+"`"+`"%s`+"`"+`" backup --all" `+"`"+`
   -WorkingDirectory "%s"
 $trigger = New-ScheduledTaskTrigger -Daily -At %s
 Register-ScheduledTask -TaskName "DockVault-Backup" -Action $action -Trigger $trigger -RunLevel Highest

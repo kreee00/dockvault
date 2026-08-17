@@ -19,10 +19,10 @@ const launchdPlistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 	<key>ProgramArguments</key>
 	<array>
 		<string>%s</string>
-		<string>backup</string>
-		<string>--all</string>
 		<string>--home</string>
 		<string>%s</string>
+		<string>backup</string>
+		<string>--all</string>
 	</array>
 	<key>StartCalendarInterval</key>
 	<dict>

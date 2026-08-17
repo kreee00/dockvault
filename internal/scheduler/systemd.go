@@ -57,7 +57,7 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 User=%s
-ExecStart=%s backup --all --home %s
+ExecStart=%s --home %s backup --all
 `
 
 const systemdTimerTemplate = `[Unit]
